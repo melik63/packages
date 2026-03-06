@@ -1,0 +1,90 @@
+---
+# tasks/main.yml
+
+- name: Update DNF cache and install base packages
+  dnf:
+    name: "{{ centos_base_packages }}"
+    state: latest
+    update_cache: yes
+  tags: [packages]
+
+- name: Set system timezone
+  timezone:
+    name: "{{ centos_timezone }}"
+  tags: [system]
+
+- name: Ensure chronyd is enabled and running
+  systemd:
+    name: chronyd
+    enabled: yes
+    state: started
+  tags: [system]
+
+- name: Apply sysctl tuning parameters
+  sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    sysctl_set: yes
+    state: present
+    reload: yes
+  loop:
+    - { key: 'net.ipv4.ip_forward', value: '0' }
+    - { key: 'net.ipv4.conf.all.send_redirects', value: '0' }
+    - { key: 'net.ipv4.tcp_syncookies', value: '1' }
+    - { key: 'vm.swappiness', value: '10' }
+  tags: [sysctl]
+
+- name: Ensure firewalld is enabled and running
+  systemd:
+    name: firewalld
+    enabled: yes
+    state: started
+  tags: [security]
+
+- name: Allow SSH service in firewalld
+  firewalld:
+    service: ssh
+    permanent: yes
+    state: enabled
+    immediate: yes
+  tags: [security]
+
+- name: Create administrative user
+  user:
+    name: "{{ centos_admin_user }}"
+    groups: wheel
+    append: yes
+    create_home: yes
+    shell: /bin/bash
+  tags: [users]
+
+- name: Set authorized SSH key for admin user
+  authorized_key:
+    user: "{{ centos_admin_user }}"
+    state: present
+    key: "{{ centos_admin_ssh_key }}"
+  when: centos_admin_ssh_key | length > 0
+  tags: [users, ssh]
+
+- name: Harden SSH configuration
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+    validate: 'sshd -t -f %s'
+  loop:
+    - { regexp: '^#?PermitRootLogin', line: 'PermitRootLogin {{ centos_ssh_permit_root_login }}' }
+    - { regexp: '^#?PasswordAuthentication', line: 'PasswordAuthentication {{ centos_ssh_password_authentication }}' }
+    - { regexp: '^#?PubkeyAuthentication', line: 'PubkeyAuthentication {{ centos_ssh_pubkey_authentication }}' }
+  notify: Restart SSH
+  tags: [security, ssh]
+
+- name: Configure sudoers for wheel group
+  lineinfile:
+    path: /etc/sudoers
+    state: present
+    regexp: '^%wheel'
+    line: '%wheel ALL=(ALL) {{ "NOPASSWD: " if centos_sudo_nopasswd else "" }}ALL'
+    validate: 'visudo -cf %s'
+  tags: [users, sudo]

@@ -1,0 +1,20 @@
+---
+# defaults/main.yml
+centos_base_packages:
+  - nano
+  - atop
+  - wget
+  - curl
+  - net-tools
+  - bind-utils
+  - bash-completion
+  - cronie
+
+centos_timezone: "Europe/Moscow"
+
+centos_admin_user: "admin"
+centos_admin_ssh_key: "" 
+centos_ssh_permit_root_login: "prohibit-password"
+centos_ssh_password_authentication: "no"
+centos_ssh_pubkey_authentication: "yes"
+centos_sudo_nopasswd: true

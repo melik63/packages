@@ -18,6 +18,8 @@ centos_base_packages:
   - bind-utils
   - bash-completion
   - cronie
+  - python3
+  - tcpdump
 
 centos_timezone: "Europe/Moscow"
 

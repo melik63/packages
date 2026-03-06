@@ -132,3 +132,16 @@
     line: '%wheel ALL=(ALL) {{ "NOPASSWD: " if centos_sudo_nopasswd else "" }}ALL'
     validate: 'visudo -cf %s'
   tags: [users, sudo]
+
+- name: Stop and disable firewalld
+  ansible.builtin.systemd:
+    name: firewalld
+    state: stopped
+    enabled: false
+
+- name: Set SELinux to disabled mode
+  ansible.posix.selinux:
+    state: disabled
+
+- name: Reboot to apply SELinux changes
+  ansible.builtin.reboot:

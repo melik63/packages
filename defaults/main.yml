@@ -1,5 +1,14 @@
 ---
 # defaults/main.yml
+
+epel_repo_url: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_facts.distribution_major_version | default('9') }}.noarch.rpm"
+epel_repo_gpg_key_url: "https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-{{ ansible_facts.distribution_major_version | default('9') }}"
+epel_repofile_path: "/etc/yum.repos.d/epel.repo"
+epel_repo_disable: false
+
+# CRB Repository (required for CentOS 9)
+crb_repo_enabled: true
+
 centos_base_packages:
   - nano
   - atop
@@ -13,8 +22,8 @@ centos_base_packages:
 centos_timezone: "Europe/Moscow"
 
 centos_admin_user: "admin"
-centos_admin_ssh_key: "" 
+centos_admin_ssh_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAID7HnR0AT3hBnK8RyVmud9cwMjf9arjxP/KDO26ONWY2 user@WIN-6PCBJFHVPG5" 
 centos_ssh_permit_root_login: "prohibit-password"
-centos_ssh_password_authentication: "no"
+centos_ssh_password_authentication: "yes"
 centos_ssh_pubkey_authentication: "yes"
 centos_sudo_nopasswd: true

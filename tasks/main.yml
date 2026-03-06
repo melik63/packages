@@ -1,17 +1,52 @@
 ---
 # tasks/main.yml
 
-- name: Enable CRB repository (required for EPEL on CentOS 9)
-  ansible.builtin.command: dnf config-manager --set-enabled crb
-  changed_when: false
+- name: Enable CRB repository
+  ansible.builtin.yum_repository:
+    name: crb
+    state: present
+    description: "CentOS-$releasever - CodeReady Builder"
+    baseurl: "$contentdir/$releasever-stream/CRB/$basearch/os"
+    gpgcheck: yes
+    enabled: "{{ crb_repo_enabled }}"
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+  ignore_errors: yes  # Ignore if already configured/duplicated
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
+
+- name: Check if EPEL repo file exists
+  ansible.builtin.stat:
+    path: "{{ epel_repofile_path }}"
+  register: epel_repofile_stat
+
+- name: Import EPEL GPG key
+  ansible.builtin.rpm_key:
+    state: present
+    key: "{{ epel_repo_gpg_key_url }}"
 
 - name: Install EPEL repository
   ansible.builtin.dnf:
-    name: epel-release
+    name: "{{ epel_repo_url }}"
     state: present
+    disable_gpg_check: no
+  register: epel_install_result
+  until: epel_install_result is succeeded
+  retries: 3
+  delay: 5
+  when: not epel_repofile_stat.stat.exists
 
-- name: Update DNF cache and install base packages
-  dnf:
+- name: Update DNF cache
+  ansible.builtin.dnf:
+    update_cache: yes
+  when: epel_install_result is changed
+
+- name: Run distro-sync
+  ansible.builtin.command: dnf -y distro-sync
+  register: distro_sync
+  changed_when: distro_sync.rc == 0
+  tags: [system]
+
+- name: Install base packages
+  ansible.builtin.dnf:
     name: "{{ centos_base_packages }}"
     state: latest
     update_cache: yes

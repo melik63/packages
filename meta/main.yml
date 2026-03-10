@@ -1,6 +1,22 @@
 ---
 galaxy_info:
   author: melik63
-  description: your role description
-  company: your company (optional)
-  Role for install default packages and add new user for Centos
+  description: "Role for install default packages and add new user for CentOS"
+  company: "your company"
+  license: "MIT"
+  min_ansible_version: "2.9"
+  
+  platforms:
+    - name: EL
+      versions:
+        - 7
+        - 8
+        - 9
+  
+  galaxy_tags:
+    - centos
+    - packages
+    - system
+    - security
+
+dependencies: []
